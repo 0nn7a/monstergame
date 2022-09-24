@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vue Basics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rubik:wght@600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.1/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-F3w7mX95PdgyTmZZMECAngseQB83DfGTowi0iMjiWaeVhAn4FJkqJByhZMI3AhiU"
+      crossorigin="anonymous"
+    />
+    <style>
+      * {
+        font-family: "Rubik", sans-serif;
+      }
+      .sd {
+        box-shadow: 0px 0px 17px rgba(0, 0, 0, 0.1);
+      }
+      .sd2 {
+        box-shadow: 0px 0px 7px rgba(0, 0, 0, 0.3);
+      }
+      p {
+        font-size: 15px;
+        margin: 0;
+      }
+      .log--player {
+        background-color: rgb(255, 193, 7);
+        padding: 4px 10px;
+        border-radius: 100px;
+      }
+      .log--monster {
+        background-color: rgb(220, 53, 69);
+        color: white;
+        padding: 4px 10px;
+        border-radius: 100px;
+      }
+      .log--heal {
+        color: rgb(25, 135, 84);
+        font-size: 1.25rem;
+      }
+      .log--damage {
+        color: rgb(187, 45, 59);
+        font-size: 1.25rem;
+      }
+    </style>
+
+    <!-- script中的defer等於非同步加載 整份HTML解析完畢才執行 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <div
+      id="game"
+      class="container d-flex flex-column align-items-center p-5 w-md-75"
+    >
+      <header class="me-auto mb-4">
+        <h1>Welcome to<br />MONSTER SLAYER Game</h1>
+      </header>
+      <section class="row w-100 row-cols-1 row-cols-lg-2">
+        <div class="col pe-lg-2 px-0">
+          <div class="card mb-3 sd">
+            <div class="row p-4">
+              <div class="col-auto">
+                <img
+                  class="rounded"
+                  src="./img/monster.jpg"
+                  style="width: 120px"
+                />
+              </div>
+              <div class="col">
+                <h3>Monster</h3>
+                <div class="progress">
+                  <div
+                    class="progress-bar bg-danger rounded-pill"
+                    :style="monsterBarStyles"
+                  >
+                    {{monsterHealth}}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col ps-lg-2 px-0">
+          <div class="card mb-3 sd">
+            <div class="row p-4">
+              <div class="col-auto">
+                <img
+                  class="rounded"
+                  src="./img/player.jpg"
+                  style="width: 120px"
+                />
+              </div>
+              <div class="col">
+                <h3>Player</h3>
+                <div class="progress">
+                  <div
+                    class="progress-bar bg-warning rounded-pill text-dark"
+                    :style="playerBarStyles"
+                  >
+                    {{playerHealth}}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div v-if="winner" class="card my-4 w-100 text-center">
+        <div class="card-header">
+          <h2 class="mb-0">GAME OVER</h2>
+        </div>
+        <div class="card-body">
+          <h4 v-if="winner === 'monster'" class="card-title mb-3">
+            You LOST this game
+          </h4>
+          <h4 v-else-if="winner === 'player'" class="card-title mb-3">
+            You WON this game
+          </h4>
+          <h4 v-else class="card-title mb-3">It's a DRAW</h4>
+
+          <button
+            @click="startAgain"
+            class="btn btn-outline-dark rounded-pill px-4 border-2"
+          >
+            New Game
+          </button>
+        </div>
+      </div>
+
+      <section v-else class="my-4 row w-100 row-cols-2 row-cols-md-4">
+        <div class="col pe-md-2 ps-0 pb-3">
+          <button
+            @click="attackMonster"
+            class="btn btn-dark btn-lg p-3 sd2 w-100"
+            style="height: 150px"
+          >
+            <i class="fa-2x mb-2 fa-solid fa-gun"></i><br />
+            <p>ATTACK</p>
+          </button>
+        </div>
+        <div class="col pe-md-2 pe-0">
+          <button
+            :disabled="mayUseSpecialAttack"
+            @click="specialAttackMonster"
+            class="btn btn-dark btn-lg p-3 sd2 w-100"
+            style="height: 150px"
+          >
+            <i class="fa-2x fa-solid fa-skull mb-2"></i><br />
+            <p>SPECIAL ATTACK</p>
+          </button>
+        </div>
+        <div class="col ps-md-2 ps-0">
+          <button
+            :disabled="mayUseHeal"
+            @click="healPlayer"
+            class="btn btn-success btn-lg p-3 sd2 w-100"
+            style="height: 150px"
+          >
+            <i class="fa-2x mb-2 fa-solid fa-briefcase-medical"></i><br />
+            <p>HEAL</p>
+          </button>
+        </div>
+        <div class="col ps-md-2 pe-0">
+          <button
+            @click="surrender"
+            class="btn btn-danger btn-lg p-3 sd2 w-100"
+            style="height: 150px"
+          >
+            <i class="fa-2x mb-2 fa-solid fa-flag"></i><br />
+            <p>SURRENDER</p>
+          </button>
+        </div>
+      </section>
+
+      <section class="w-100">
+        <h2>Battle Log</h2>
+        <ul class="list-unstyled" style="overflow-y: auto; height: 200px">
+          <li v-for="msg in logMsg" class="my-2">
+            <span
+              :class="{'log--player': msg.actBy === 'player', 'log--monster': msg.actBy === 'monster'}"
+              >{{msg.actBy === "player" ? "Player" : "Monster"}}</span
+            >
+            <span v-if="msg.actType === 'heal'">
+              Heal <span class="log--heal">{{msg.actVal}}hp</span>
+            </span>
+            <span v-else-if="msg.actType === 'sp'">
+              Special Attack
+              <span class="log--damage">{{msg.actVal}}hp</span></span
+            >
+            <span v-else>
+              Attack <span class="log--damage">{{msg.actVal}}hp</span></span
+            >
+          </li>
+        </ul>
+      </section>
+    </div>
+    <script
+      src="https://kit.fontawesome.com/c83333c7f8.js"
+      crossorigin="anonymous"
+    ></script>
+  </body>
+</html>
